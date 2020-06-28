@@ -1,3 +1,5 @@
+import os
+import random
 import wave
 from tensorflow.python.keras.layers import Input, Dense
 from tensorflow.python.keras.models import Model
@@ -5,6 +7,13 @@ import numpy as np
 
 
 class Processor():
+
+    nchannels = 1
+    sampwidth = 1
+    framerate = 1
+    nframes = 1
+    comptype = 1
+    compname = 1
 
     def __init__(self):
         pass
@@ -46,6 +55,7 @@ class Processor():
         return autoencoder
 
     def getTrainingSet(self, readFile, inputDim):
+        self.setParams(readFile)
         # prepare array of right shape
         totalFrames = readFile.getnframes()
         sampwidth = readFile.getsampwidth()
@@ -56,9 +66,9 @@ class Processor():
         else:
             numberOfSets = int(numberOfSets)
 
-        x_train = np.empty((numberOfSets, inputDim))
+        x_train = np.empty((numberOfSets, inputDim), dtype=np.ubyte)
 
-        if  inputDim/sampwidth % 1 > 0:
+        if inputDim/sampwidth % 1 > 0:
             raise ValueError("Input dimension has to be divisible by sampwidth")
 
         # miscellaneous vars
@@ -82,12 +92,38 @@ class Processor():
 
         return self.normalize(x_train)
 
+    def setParams(self, inputFile):
+        self.nchannels = inputFile.getnchannels()
+        self.sampwidth = inputFile.getsampwidth()
+        self.framerate = inputFile.getframerate()
+        self.nframes = inputFile.getnframes()
+        self.comptype = inputFile.getcomptype()
+        self.compname = inputFile.getcompname()
+
+    def writeCover(self, inputTrack, encoder):
+        newCover = self.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\generated" + os.sep + "newCover" + random.randint(0, 100).__str__() +".wav", 'wb')
+        newCover.setnchannels(self.nchannels)
+        newCover.setsampwidth(self.sampwidth)
+        newCover.setframerate(self.framerate)
+        newCover.setcomptype(self.comptype, self.compname)
+
+        res = encoder.predict(inputTrack)
+        intArray = []
+        for entry in res:
+            entry = self.deNormilize(entry)
+            list = entry.tolist()
+            for i in range(0, len(list)):
+                intArray.append(list[i])
+
+        newCover.writeframes(bytes(intArray))
+        print(newCover.getparams())
+        newCover.close()
+        return newCover
+
+
     def normalize(self, inputSet):
         return inputSet.astype('float32') / 255.
 
 
     def deNormilize(self, outputSet):
-        # DENORMALIZE
-        return 0
-
-
+        return (outputSet * 255).astype('uint8')

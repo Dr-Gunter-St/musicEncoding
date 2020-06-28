@@ -36,4 +36,9 @@ print(totoInput.shape)
 print(totoInput[0].shape)
 totoOutput = processor.getTrainingSet(totoCover, 400)
 
-history = regularEncoder.fit(totoInput, totoInput, batch_size=20, epochs=40, verbose=1)
+history = regularEncoder.fit(totoInput, totoOutput, batch_size=20, epochs=1, verbose=1)
+
+newCover = processor.writeCover(totoInput, regularEncoder)
+
+totoOriginal.close()
+totoCover.close()
