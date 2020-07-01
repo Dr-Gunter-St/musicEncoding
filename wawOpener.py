@@ -54,10 +54,9 @@ class Processor():
 
         return autoencoder
 
-    def getTrainingSet(self, readFile, inputDim):
+    def getTrainingSet(self, readFile, inputDim, totalFrames):
         self.setParams(readFile)
         # prepare array of right shape
-        totalFrames = readFile.getnframes()
         sampwidth = readFile.getsampwidth()
         numberOfSets = (totalFrames*sampwidth) / inputDim
 
@@ -127,3 +126,27 @@ class Processor():
 
     def deNormilize(self, outputSet):
         return (outputSet * 255).astype('uint8')
+
+    def getAmplitudes(self, readFile):
+        totalFrames = readFile.getnframes()
+        currentPos = 0
+        max = -10000000
+        min = 10000000
+
+
+        while currentPos < totalFrames:
+
+            frame = readFile.readframes(1)
+            int_value = int.from_bytes(frame, byteorder='little')
+
+            if int_value > max:
+                max = int_value
+            if int_value < min:
+                min = int_value
+
+            currentPos += 1
+
+        maxUint = np.uint32(max)
+        minUint = np.uint32(min)
+        print("Max amplitude: ", maxUint.astype('int32'))
+        print("Min amplitude: ", minUint.astype('int32'))
