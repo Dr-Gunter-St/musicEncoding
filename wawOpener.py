@@ -4,6 +4,7 @@ import wave
 from tensorflow.python.keras.layers import Input, Dense
 from tensorflow.python.keras.models import Model
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class Processor():
@@ -22,16 +23,25 @@ class Processor():
         file = wave.open(filename, mode)
         return file
 
-    def getEncoder(self, inputDim, compressionFactor):
-        encodingDim = int(inputDim / compressionFactor)
+    def getEncoder(self, inputDim, encodingDim):
+
+        compressionFactor = int(inputDim/encodingDim)
+        currentCompression = compressionFactor
 
         inputLayer = Input(shape=(inputDim,))
-        encoded = Dense(encodingDim * 4, activation='relu')(inputLayer)
-        encoded = Dense(encodingDim * 2, activation='relu')(encoded)
-        encoded = Dense(encodingDim, activation='relu')(encoded)
+        encoded = inputLayer
 
-        decoded = Dense(encodingDim * 2, activation='relu')(encoded)
-        decoded = Dense(encodingDim * 4, activation='relu')(decoded)
+        while currentCompression > 1:
+            encoded = Dense(encodingDim * currentCompression, activation='relu')(encoded)
+            currentCompression -= 0.5
+
+        encoded = Dense(encodingDim, activation='relu')(encoded)
+        decoded = Dense(encodingDim, activation='relu')(encoded)
+
+        while currentCompression <= compressionFactor:
+            decoded = Dense(encodingDim * currentCompression, activation='relu')(decoded)
+            currentCompression += 0.5
+
         decoded = Dense(inputDim, activation='sigmoid')(decoded)
 
         autoencoder = Model(inputLayer, decoded)
@@ -54,42 +64,61 @@ class Processor():
 
         return autoencoder
 
-    def getTrainingSet(self, readFile, inputDim, totalFrames):
+    def getTrainingSet(self, readFile, inputDim, totalFrames, normalize=True, normalization_factor=255.):
         self.setParams(readFile)
         # prepare array of right shape
-        sampwidth = readFile.getsampwidth()
-        numberOfSets = (totalFrames*sampwidth) / inputDim
+        numberOfSets = (totalFrames) / inputDim
 
+        # Omg, this is a round up part
         if numberOfSets % 1 > 0:
             numberOfSets = int(numberOfSets) + 1
         else:
             numberOfSets = int(numberOfSets)
 
-        x_train = np.empty((numberOfSets, inputDim), dtype=np.ubyte)
+        detype = np.ubyte
+        if normalization_factor == 65535.:
+            detype = np.uint16
 
-        if inputDim/sampwidth % 1 > 0:
-            raise ValueError("Input dimension has to be divisible by sampwidth")
+        x_train = np.empty((numberOfSets, inputDim), dtype=detype)
 
         # miscellaneous vars
         currentPos = 0
         currentSet = 0
         readFile.setpos(currentPos)
 
-        while currentPos*4 + inputDim < totalFrames*4:
-            frame = readFile.readframes(int(inputDim/sampwidth))
-            int_values = [x for x in frame]
-            x_train[currentSet] = np.array(int_values)
-            currentPos+=int(inputDim/sampwidth)
-            currentSet+=1
+        while currentPos + inputDim < totalFrames:
+
+            currentSample = 0
+            int_set = []
+            # proper preprocessing
+            while currentSample < inputDim:
+                frame = readFile.readframes(1)
+                int_value = int.from_bytes(frame, byteorder='little')
+                int_set.append(int_value)
+                currentSample += 1
+
+            x_train[currentSet] = np.array(int_set)
+            currentPos += inputDim
+            currentSet += 1
 
         if currentPos < totalFrames:
-            frame = readFile.readframes(totalFrames - currentPos)
-            int_values = [x for x in frame]
-            while len(int_values) < inputDim:
-                int_values.append(0)
-            x_train[currentSet] = np.array(int_values)
 
-        return self.normalize(x_train)
+            currentSample = 0
+            int_set = []
+
+            while currentSample < totalFrames - currentPos:
+                frame = readFile.readframes(1)
+                int_value = int.from_bytes(frame, byteorder='little')
+                int_set.append(int_value)
+                currentSample += 1
+
+            while len(int_set) < inputDim:
+                int_set.append(0)
+            x_train[currentSet] = np.array(int_set)
+
+        if normalize:
+            return self.normalize(x_train, normalization_factor)
+        return x_train
 
     def setParams(self, inputFile):
         self.nchannels = inputFile.getnchannels()
@@ -99,33 +128,38 @@ class Processor():
         self.comptype = inputFile.getcomptype()
         self.compname = inputFile.getcompname()
 
-    def writeCover(self, inputTrack, encoder):
+    def writeCover(self, inputTrack, encoder, de_normalization_factor=255):
         newCover = self.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\generated" + os.sep + "newCover" + random.randint(0, 100).__str__() +".wav", 'wb')
         newCover.setnchannels(self.nchannels)
         newCover.setsampwidth(self.sampwidth)
         newCover.setframerate(self.framerate)
         newCover.setcomptype(self.comptype, self.compname)
+        self.printparams()
 
         res = encoder.predict(inputTrack)
-        intArray = []
+        typefunc = np.uint8
+        if de_normalization_factor == 65535:
+            typefunc = np.uint16
         for entry in res:
-            entry = self.deNormilize(entry)
-            list = entry.tolist()
-            for i in range(0, len(list)):
-                intArray.append(list[i])
+            entry = self.deNormilize(entry, de_normalization_factor)
+            for i in range(0, len(entry)):
+                newCover.writeframes(int.to_bytes(typefunc(entry[i]).item(), self.sampwidth, 'little'))
 
-        newCover.writeframes(bytes(intArray))
+        # int.to_bytes(np.uint16(entry[0]).item(),2,'little')
         print(newCover.getparams())
         newCover.close()
         return newCover
 
 
-    def normalize(self, inputSet):
-        return inputSet.astype('float32') / 255.
+    def normalize(self, inputSet, normalization_factor=255.):
+        return inputSet.astype('float32') / normalization_factor
 
 
-    def deNormilize(self, outputSet):
-        return (outputSet * 255).astype('uint8')
+    def deNormilize(self, outputSet, de_normalization_factor=255):
+        stype = 'uint8'
+        if de_normalization_factor == 65535:
+            stype = 'uint16'
+        return (outputSet * de_normalization_factor).astype(stype)
 
     def getAmplitudes(self, readFile):
         totalFrames = readFile.getnframes()
@@ -146,7 +180,16 @@ class Processor():
 
             currentPos += 1
 
-        maxUint = np.uint32(max)
-        minUint = np.uint32(min)
-        print("Max amplitude: ", maxUint.astype('int32'))
-        print("Min amplitude: ", minUint.astype('int32'))
+        print("Max amplitude: ", max)
+        print("Min amplitude: ", min)
+        return max, min
+
+    def printparams(self):
+        print("nchannels: ", self.nchannels, ", sampwidth: ", self.sampwidth,
+                    ", framerate: ", self.framerate, ", nframes: ", self.nframes,
+                    ", comptype: ", self.compname, ", framerate: ", self.compname)
+
+    def drawDensity(self, inputSet, amplitude):
+        arrayedFile = self.getTrainingSet(inputSet, inputSet.getnframes(), inputSet.getnframes(), normalize=False, normalization_factor=float(amplitude))
+        plt.hist(arrayedFile[0])
+        plt.show()
