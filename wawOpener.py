@@ -128,7 +128,7 @@ class Processor():
         self.comptype = inputFile.getcomptype()
         self.compname = inputFile.getcompname()
 
-    def writeCover(self, inputTrack, encoder, de_normalization_factor=255):
+    def writeCover(self, inputTrack, encoder, de_normalize=True, de_normalization_factor=255):
         newCover = self.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\generated" + os.sep + "newCover" + random.randint(0, 100).__str__() +".wav", 'wb')
         newCover.setnchannels(self.nchannels)
         newCover.setsampwidth(self.sampwidth)
@@ -141,7 +141,8 @@ class Processor():
         if de_normalization_factor == 65535:
             typefunc = np.uint16
         for entry in res:
-            entry = self.deNormilize(entry, de_normalization_factor)
+            if de_normalize:
+                entry = self.deNormilize(entry, de_normalization_factor)
             for i in range(0, len(entry)):
                 newCover.writeframes(int.to_bytes(typefunc(entry[i]).item(), self.sampwidth, 'little'))
 

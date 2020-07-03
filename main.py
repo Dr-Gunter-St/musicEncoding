@@ -42,18 +42,18 @@ regularEncoder = processor.getEncoder(40, 16)
 
 
 
-optimizer = Adadelta()
+optimizer = Adadelta(lr=2.0, rho=0.75)
 
-regularEncoder.compile(optimizer, loss='cosine_similarity')
+regularEncoder.compile(optimizer, loss='mean_squared_error')
 totoInput = processor.getTrainingSet(totoOriginal, 40, totalFrames, normalize=True, normalization_factor=float(amplitude))
 print(totoInput.shape)
 print(totoInput[0].shape)
 totoOutput = processor.getTrainingSet(totoCover, 40, totalFrames, normalize=True, normalization_factor=float(amplitude))
 
 
-history = regularEncoder.fit(totoInput, totoOutput, batch_size=200, epochs=40, verbose=1)
+history = regularEncoder.fit(totoInput, totoOutput, batch_size=2000, epochs=5, verbose=1)
 
-newCover = processor.writeCover(totoInput, regularEncoder, de_normalization_factor=amplitude)
+newCover = processor.writeCover(totoInput, regularEncoder, de_normalize=True, de_normalization_factor=amplitude)
 
 
 
