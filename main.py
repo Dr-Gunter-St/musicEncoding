@@ -1,10 +1,12 @@
-import wawOpener as ww
+import wawProcessor as ww
+import simpleEncoder as se
 import os
 import tensorflow as tf
 from tensorflow.python.keras.optimizers import Adadelta
 
 tf.compat.v1.disable_eager_execution()
 processor = ww.Processor()
+enc = se.Encoder()
 totoOriginal = processor.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\originals" + os.sep + "africa-toto-8bit.wav", 'rb')
 totoCover = processor.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\covers" + os.sep + "toto-metal-cover-cut-8bit.wav", 'rb')
 
@@ -38,7 +40,7 @@ print(bytes(int_values))
 #encoding_dim = totoOriginal.getsampwidth()
 #input_img = Input(shape=(784,))
 
-regularEncoder = processor.getEncoder(40, 16)
+regularEncoder = enc.getEncoder(40, 16)
 
 
 
