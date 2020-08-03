@@ -47,10 +47,10 @@ regularEncoder = enc.getEncoder(40, 16)
 optimizer = Adadelta(lr=2.0, rho=0.75)
 
 regularEncoder.compile(optimizer, loss='mean_squared_error')
-totoInput = processor.getTrainingSet(totoOriginal, 40, totalFrames, normalize=True, normalization_factor=float(amplitude))
+totoInput = processor.getTrainingSet(totoOriginal, 40, normalize=True, normalization_factor=float(amplitude))
 print(totoInput.shape)
 print(totoInput[0].shape)
-totoOutput = processor.getTrainingSet(totoCover, 40, totalFrames, normalize=True, normalization_factor=float(amplitude))
+totoOutput = processor.getTrainingSet(totoCover, 40, normalize=True, normalization_factor=float(amplitude))
 
 
 history = regularEncoder.fit(totoInput, totoOutput, batch_size=2000, epochs=5, verbose=1)

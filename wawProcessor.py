@@ -21,9 +21,10 @@ class Processor():
         file = wave.open(filename, mode)
         return file
 
-    def getTrainingSet(self, readFile, inputDim, totalFrames, normalize=True, normalization_factor=255.):
+    def getTrainingSet(self, readFile, inputDim, normalize=True, normalization_factor=255.):
         self.setParams(readFile)
         # prepare array of right shape
+        totalFrames = readFile.getnframes()
         numberOfSets = (totalFrames) / inputDim
 
         # Omg, this is a round up part
@@ -148,6 +149,39 @@ class Processor():
                     ", comptype: ", self.compname, ", framerate: ", self.compname)
 
     def drawDensity(self, inputSet, amplitude):
-        arrayedFile = self.getTrainingSet(inputSet, inputSet.getnframes(), inputSet.getnframes(), normalize=False, normalization_factor=float(amplitude))
+        arrayedFile = self.getTrainingSet(inputSet, inputSet.getnframes(), normalize=False, normalization_factor=float(amplitude))
         plt.hist(arrayedFile[0])
         plt.show()
+
+    def getRNNTrainSequences(self, source, result, seq_size, normalize=True, normalization_factor=255.):
+        wholeSourceSequence = self.getTrainingSet(source, source.getnframes(), normalize, normalization_factor)[0]
+        wholeResultingSequence = self.getTrainingSet(result, result.getnframes(), normalize, normalization_factor)[0]
+
+        if (len(wholeSourceSequence) > len(wholeResultingSequence)):
+            wholeSourceSequence = wholeSourceSequence[:len(wholeResultingSequence)-1]
+
+        return self.to_sequences(seq_size, wholeSourceSequence, wholeResultingSequence)
+
+    def to_sequences(self, seq_size, obs1, obs2):
+        x = []
+        y = []
+
+        for i in range(len(obs1) - seq_size):
+            # print(i, "/", len(obs1))
+            window = obs1[i:(i + seq_size)]
+            after_window = obs2[i + seq_size]
+            window = [[x] for x in window]
+            # print("{} - {}".format(window,after_window))
+            x.append(window)
+            y.append(after_window)
+
+        return np.array(x), np.array(y)
+
+    def getValidationSet(self, x_train, y_train):
+        size = len(x_train)
+        x_test = x_train[int(size*0.8):]
+        y_test = y_train[int(size*0.8):]
+        x_train = x_train[:int(size*0.8)]
+        y_train = y_train[:int(size*0.8)]
+
+        return x_train, y_train, x_test, y_test
