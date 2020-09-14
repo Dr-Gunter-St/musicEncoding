@@ -7,8 +7,8 @@ from tensorflow.python.keras.optimizers import Adadelta
 tf.compat.v1.disable_eager_execution()
 processor = ww.Processor()
 enc = se.Encoder()
-totoOriginal = processor.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\originals" + os.sep + "africa-toto-8bit.wav", 'rb')
-totoCover = processor.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\covers" + os.sep + "toto-metal-cover-cut-8bit.wav", 'rb')
+totoOriginal = processor.openWave("", 'rb')
+totoCover = processor.openWave("", 'rb')
 
 print(totoOriginal.getparams()) #(nchannels, sampwidth, framerate, nframes, comptype, compname)
 print(totoCover.getparams()) #(nchannels, sampwidth, framerate, nframes, comptype, compname)
@@ -21,8 +21,8 @@ amplitude = maxAmpl - minAmpl
 totoOriginal.close()
 totoCover.close()
 
-totoOriginal = processor.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\originals" + os.sep + "africa-toto-8bit.wav", 'rb')
-totoCover = processor.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\covers" + os.sep + "toto-metal-cover-cut-8bit.wav", 'rb')
+totoOriginal = processor.openWave("", 'rb')
+totoCover = processor.openWave("", 'rb')
 
 # Distribution of values
 #processor.drawDensity(totoOriginal, amplitude)
