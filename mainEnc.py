@@ -10,6 +10,9 @@ enc = se.Encoder()
 totoOriginal = processor.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\originals" + os.sep + "africa-toto.wav", 'rb')
 totoCover = processor.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\covers" + os.sep + "toto-metal-cover-cut.wav", 'rb')
 
+totoOriginal = processor.openWave("", 'rb')
+totoCover = processor.openWave("", 'rb')
+
 print(totoOriginal.getparams()) #(nchannels, sampwidth, framerate, nframes, comptype, compname)
 print(totoCover.getparams()) #(nchannels, sampwidth, framerate, nframes, comptype, compname)
 totalFrames = min(totoOriginal.getnframes(), totoCover.getnframes())
@@ -21,8 +24,13 @@ amplitude = maxAmpl - minAmpl
 totoOriginal.close()
 totoCover.close()
 
+
 totoOriginal = processor.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\originals" + os.sep + "africa-toto.wav", 'rb')
 totoCover = processor.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\covers" + os.sep + "toto-metal-cover-cut.wav", 'rb')
+
+totoOriginal = processor.openWave("", 'rb')
+totoCover = processor.openWave("", 'rb')
+
 
 # Distribution of values
 processor.drawDensity(totoOriginal, amplitude, 'Original song\'s amplitude values distribution')
