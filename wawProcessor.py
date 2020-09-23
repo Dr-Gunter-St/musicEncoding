@@ -148,9 +148,14 @@ class Processor():
                     ", framerate: ", self.framerate, ", nframes: ", self.nframes,
                     ", comptype: ", self.compname, ", framerate: ", self.compname)
 
-    def drawDensity(self, inputSet, amplitude):
+    def drawDensity(self, inputSet, amplitude, label):
         arrayedFile = self.getTrainingSet(inputSet, inputSet.getnframes(), normalize=False, normalization_factor=float(amplitude))
         plt.hist(arrayedFile[0])
+        plt.xlabel('Value', fontsize=15)
+        plt.ylabel('Frequency', fontsize=15)
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        plt.title(label, fontsize=15)
         plt.show()
 
     def getRNNTrainSequences(self, source, result, seq_size, normalize=True, normalization_factor=255.):
