@@ -190,3 +190,27 @@ class Processor():
         y_train = y_train[:int(size*0.8)]
 
         return x_train, y_train, x_test, y_test
+
+    def writeRNNCover(self, inputSequences, model):
+        newCover = self.openWave("C:\\Users\\NKF786\\PycharmProjects\\musicEncoding\\generated" + os.sep + "newCoverRNN" + random.randint(0, 100).__str__() +".wav", 'wb')
+        newCover.setnchannels(self.nchannels)
+        newCover.setsampwidth(self.sampwidth)
+        newCover.setframerate(self.framerate)
+        newCover.setcomptype(self.comptype, self.compname)
+        self.printparams()
+
+        res = model.predict(inputSequences)
+        typefunc = np.uint8
+        de_normalization_factor = 255
+        if self.sampwidth == 2:
+            typefunc = np.uint16
+            de_normalization_factor = 65535
+        for entry in res:
+            entry = self.deNormilize(entry, de_normalization_factor)
+            for i in range(0, len(entry)):
+                newCover.writeframes(int.to_bytes(typefunc(entry[i]).item(), self.sampwidth, 'little'))
+
+        # int.to_bytes(np.uint16(entry[0]).item(),2,'little')
+        print(newCover.getparams())
+        newCover.close()
+        return newCover

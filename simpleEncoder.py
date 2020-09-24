@@ -27,7 +27,7 @@ class Encoder:
 
         decoded = Dense(inputDim, activation='sigmoid')(decoded)
 
-        autoencoder = Model(inputLayer, decoded)
+        autoencoder = Model(inputLayer, decoded, name='Autoencoder')
         autoencoder.summary()
 
         return autoencoder
